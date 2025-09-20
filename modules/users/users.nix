@@ -2,7 +2,8 @@
 {
   users.groups.media = { };
 
-  users.users = lib.mkMerge ([
+  users.users = lib.mkMerge [
+    # 1) the media kiosk user
     {
       media = {
         isNormalUser = true;
@@ -12,17 +13,21 @@
         password = "changeme";
       };
     }
-  ] ++ map (u: {
-    ${u} = {
+
+    # 2) regular users from vars.users
+    (lib.genAttrs vars.users (u: {
       isNormalUser = true;
       extraGroups = [ "users" "media" ];
       password = "changeme";
-    };
-  }) vars.users);
+    }))
 
-  # Give service accounts access to the media group
-  users.users.jellyfin.extraGroups = [ "media" ];
-  users.users.deluge.extraGroups = [ "media" ];
-  users.users.smbd.extraGroups = [ "media" ];
-  users.users.homeassistant.extraGroups = [ "media" ];
+    # 3) service accounts — add them to the media group
+    {
+      jellyfin     = { extraGroups = [ "media" ]; };
+      deluge       = { extraGroups = [ "media" ]; };
+      smbd         = { extraGroups = [ "media" ]; };
+      homeassistant= { extraGroups = [ "media" ]; };
+    }
+  ];
 }
+
