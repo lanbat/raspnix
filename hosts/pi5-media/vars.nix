@@ -36,13 +36,13 @@
     };
   };
 
-  users = [ "kiril" "alex" ];
+  users = [ "traph" "alex" ];
 
   # Adjustable per-user quotas (GiB). Users not listed here fall back to `default`.
   quotas = {
     default = { softGiB = 50;  hardGiB = 60;  };
     perUser = {
-      kiril = { softGiB = 200; hardGiB = 250; };
+      traph = { softGiB = 200; hardGiB = 250; };
       alex  = { softGiB = 100; hardGiB = 120; };
     };
   };

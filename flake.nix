@@ -1,29 +1,23 @@
 {
-  description = "Pi 5 media box";
+  description = "Raspnix – Pi 5";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.05";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixos-raspberrypi.url = "github:nvmd/nixos-raspberrypi/main";
+  };
 
-  outputs = { self, nixpkgs, ... }: {
-    nixosConfigurations.pi5-media = nixpkgs.lib.nixosSystem {
-      system = "aarch64-linux";
-      specialArgs = { vars = import ./hosts/pi5-media/vars.nix; };
-      modules = [
-        ./hosts/pi5-media/configuration.nix
-        ./modules/storage/storage-and-quotas.nix
-        ./modules/users/users.nix
-        ./modules/desktop/lightdm.nix
-        ./modules/media/kodi.nix
-        ./modules/media/retroarch.nix
-        ./modules/media/jellyfin.nix
-        ./modules/media/deluge.nix
-        ./modules/media/sonarr.nix
-        ./modules/media/radarr.nix
-        ./modules/media/photoprism.nix
-        ./modules/media/bitmagnet.nix
-        ./modules/network/samba.nix
-        ./modules/common/firewall.nix
-        ./modules/home/home-assistant.nix
-      ];
+  nixConfig = {
+    extra-substituters = [ "https://nixos-raspberrypi.cachix.org" ];
+    extra-trusted-public-keys = [
+      "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+    ];
+  };
+
+  outputs = { self, nixpkgs, nixos-raspberrypi, ... }: {
+    nixosConfigurations.pi5-media = nixos-raspberrypi.lib.nixosSystem {
+      specialArgs = { vars = import ./hosts/pi5-media/vars.nix; inherit nixos-raspberrypi; };
+      modules = [ ./hosts/pi5-media ];  # or ./hosts/pi5-media/default.nix
     };
   };
 }
+
