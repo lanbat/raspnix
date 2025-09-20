@@ -1,11 +1,11 @@
 {
   hostname   = "pi5-media";
-  timezone   = "Europe/Sofia";
+  timezone   = "Europe/London";
 
   # LUKS containers (set these to your actual LUKS UUIDs from `blkid`)
   luks = {
-    nvme1 = { deviceUUID = "LUKS-UUID-NVME1"; name = "crypt-nvme1"; };
-    nvme2 = { deviceUUID = "LUKS-UUID-NVME2"; name = "crypt-nvme2"; };
+    nvme1 = { deviceUUID = "216f28c4-e49d-4f47-93ab-4c21210364b6"; name = "crypt-nvme1"; };
+    nvme2 = { deviceUUID = "89a420ac-d70a-4311-83d0-3f529fc0f833"; name = "crypt-nvme2"; };
   };
 
   # Decrypted mount points
@@ -70,10 +70,6 @@
       db      = "bitmagnet";
       user    = "bitmagnet";
       dataDir = "/mnt/nvme2/apps/postgres-bitmagnet";
-    };
-    redis = {
-      port    = 6379;
-      dataDir = "/mnt/nvme2/apps/redis-bitmagnet";
     };
   };
 }

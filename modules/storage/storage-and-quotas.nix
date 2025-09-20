@@ -17,10 +17,12 @@ let
     q = lib.attrByPath [u] vars.quotas.perUser (vars.quotas.default);
   in { soft = toKiB q.softGiB; hard = toKiB q.hardGiB; };
 
-  # Generate per-user setquota lines
+  # Generate per-user setquota lines (leave $DEV for runtime)
   quotaLines = lib.concatStringsSep "\n" (map (u:
     let q = quotaKiB u;
-    in "setquota -u " + u + " " + q.soft + " " + q.hard + " 0 0 "$DEV" || true"
+    in ''
+      setquota -u ${u} ${toString q.soft} ${toString q.hard} 0 0 "$DEV" || true
+    ''
   ) vars.users);
 in
 {
@@ -50,6 +52,7 @@ in
   };
 
   services.quota.enable = true;
+  environment.systemPackages = [ pkgs.quota ];
 
   # Directory layout
   systemd.tmpfiles.rules = [
@@ -71,7 +74,6 @@ in
     "d ${vars.paths.photoprism.storage}   0755 photoprism users - -"
     "d ${vars.paths.bitmagnet.dataDir}    0755 root   users - -"
     "d ${vars.bitmagnetDB.postgres.dataDir} 0755 postgres users - -"
-    "d ${vars.bitmagnetDB.redis.dataDir}    0755 redis    users - -"
   ];
 
   # Ensure Deluge target is writable
@@ -87,21 +89,31 @@ in
   systemd.services.apply-quotas = {
     description = "Apply filesystem quotas for Samba users (per-user settings)";
     wantedBy = [ "multi-user.target" ];
-    after = [ "local-fs.target" ];
+    after = [ "local-fs.target" "quotaon.service" ];
+    # Make sure needed tools are available for the oneshot
+    path = [ pkgs.quota pkgs.util-linux pkgs.coreutils ];
     serviceConfig.Type = "oneshot";
     script = ''
-      set -e
-      DEV=$(findmnt -n -o SOURCE ${usersRoot})
+      set -euo pipefail
+
+      # Resolve the device backing ${usersRoot}
+      DEV="$(findmnt -T ${usersRoot} -no SOURCE)"
       [ -n "$DEV" ] || exit 0
 
-      # Set quotas
+      # Ensure quota metadata exists and quotas are on for users
+      quotacheck -cum "$DEV" || true
+      quotaon -u "$DEV" || true
+
+      # Apply quotas
       ${quotaLines}
 
       # Ensure per-user private dirs exist
       for u in ${lib.concatStringsSep " " vars.users}; do
-        id "$u" >/dev/null 2>&1 || continue
-        install -d -m 0700 -o "$u" -g users ${usersRoot}/users/"$u"
+        if id "$u" >/dev/null 2>&1; then
+          install -d -m 0700 -o "$u" -g users ${usersRoot}/users/"$u"
+        fi
       done
     '';
   };
 }
+

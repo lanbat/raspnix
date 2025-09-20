@@ -21,13 +21,6 @@ in
         # environmentFiles = [ "/path/to/postgres.env" ];
         extraOptions = [ "--name=bitmagnet-postgres" "--restart=always" ];
       };
-      "bitmagnet-redis" = {
-        image = "docker.io/library/redis:7";
-        ports = [ "${toString dbCfg.redis.port}:6379" ];
-        volumes = [ "${dbCfg.redis.dataDir}:/data" ];
-        cmd = [ "redis-server" "--save" "60" "1" "--loglevel" "warning" ];
-        extraOptions = [ "--name=bitmagnet-redis" "--restart=always" ];
-      };
     }) //
     {
       "bitmagnet" = {
@@ -39,10 +32,10 @@ in
         volumes = [
           "${bitmag.dataDir}:/data"
         ];
-        # Provide DSN and Redis address via env file at vars.paths.bitmagnet.envFile
+        # Provide Postgres settings via env file at vars.paths.bitmagnet.envFile (no Redis)
         environmentFiles = [ vars.paths.bitmagnet.envFile ];
         extraOptions = [ "--name=bitmagnet" "--restart=always" ];
-        dependsOn = lib.optional dbCfg.enable [ "bitmagnet-postgres" "bitmagnet-redis" ];
+        dependsOn = lib.optional dbCfg.enable [ "bitmagnet-postgres" ];
       };
     };
 
